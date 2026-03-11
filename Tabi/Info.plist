@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>NSAccessibilityUsageDescription</key>
+	<string>Tabi needs Accessibility access to detect keyboard shortcuts and switch between windows.</string>
+	<key>NSScreenCaptureUsageDescription</key>
+	<string>Tabi needs Screen Recording access to show window thumbnails in the switcher.</string>
+</dict>
+</plist>
