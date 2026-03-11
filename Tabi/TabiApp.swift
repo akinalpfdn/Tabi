@@ -26,6 +26,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.setActivationPolicy(.accessory)
         try? SMAppService.mainApp.register()
         checkPermissionsAndStart()
+        UpdateChecker.check(
+            repo: "akinalpfdn/tabi",
+            releasePageURL: URL(string: "https://github.com/akinalpfdn/tabi/releases/latest")!
+        )
     }
 
     // MARK: - Permissions
