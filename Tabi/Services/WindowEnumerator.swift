@@ -5,18 +5,27 @@ import ScreenCaptureKit
 enum WindowEnumerator {
 
     static func allWindows() async -> [WindowItem] {
-        guard let content = try? await SCShareableContent.excludingDesktopWindows(true, onScreenWindowsOnly: true) else {
+        guard let content = try? await SCShareableContent.excludingDesktopWindows(true, onScreenWindowsOnly: false) else {
             return []
         }
 
-        let excluded: Set<String> = ["Tabi", "Dock", "Window Server", "Control Center", "NotificationCenter"]
+        // Only include apps with regular activation policy (visible in Dock)
+        let userAppPIDs: Set<Int32> = Set(
+            NSWorkspace.shared.runningApplications
+                .filter { $0.activationPolicy == .regular }
+                .map { $0.processIdentifier }
+        )
+
+        let excludedNames: Set<String> = ["Tabi", "Dock", "Window Server", "Control Center",
+                                          "NotificationCenter", "Spotlight", "universalAccessAuthWarn"]
 
         return content.windows.compactMap { scWindow -> WindowItem? in
             guard let app = scWindow.owningApplication else { return nil }
-            guard !excluded.contains(app.applicationName) else { return nil }
-            guard scWindow.frame.width > 50, scWindow.frame.height > 50 else { return nil }
+            guard userAppPIDs.contains(app.processID) else { return nil }
+            guard !excludedNames.contains(app.applicationName) else { return nil }
+            guard scWindow.frame.width > 100, scWindow.frame.height > 100 else { return nil }
+            guard let title = scWindow.title, !title.isEmpty else { return nil }
 
-            let title = scWindow.title ?? app.applicationName
             let appIcon = NSWorkspace.shared.icon(forFile: appPath(for: app.processID) ?? "")
 
             return WindowItem(

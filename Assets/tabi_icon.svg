@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#141414"/>
+      <stop offset="100%" stop-color="#0A0A0A"/>
+    </linearGradient>
+    <!-- Warm amber accent for active selection -->
+    <radialGradient id="amberGlow" cx="0.35" cy="0.45" r="0.5">
+      <stop offset="0%" stop-color="#F5A623" stop-opacity="0.1"/>
+      <stop offset="100%" stop-color="#F5A623" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- macOS squircle background -->
+  <rect x="32" y="32" width="960" height="960" rx="192" ry="192" fill="url(#bgGrad)"/>
+  <rect x="32" y="32" width="960" height="960" rx="192" ry="192" fill="none" stroke="#FFFFFF" stroke-width="2" opacity="0.06"/>
+
+  <!-- ===== SWITCHER BAR (horizontal window strip) ===== -->
+  <rect x="108" y="310" width="808" height="404" rx="32" ry="32" fill="#FFFFFF" opacity="0.03"/>
+  <rect x="108" y="310" width="808" height="404" rx="32" ry="32" fill="none" stroke="#E0E0E0" stroke-width="5" opacity="0.15"/>
+
+  <!-- ===== WINDOW THUMBNAIL 1 - Active/selected (amber accent) ===== -->
+  <rect x="156" y="358" width="240" height="180" rx="16" ry="16" fill="#F5A623" opacity="0.07"/>
+  <rect x="156" y="358" width="240" height="180" rx="16" ry="16" fill="none" stroke="#F5A623" stroke-width="4" opacity="0.55"/>
+  <!-- Title bar -->
+  <line x1="156" y1="390" x2="396" y2="390" stroke="#F5A623" stroke-width="2.5" opacity="0.3"/>
+  <circle cx="178" cy="374" r="5" fill="none" stroke="#F5A623" stroke-width="2.5" opacity="0.45"/>
+  <circle cx="196" cy="374" r="5" fill="none" stroke="#F5A623" stroke-width="2.5" opacity="0.45"/>
+  <circle cx="214" cy="374" r="5" fill="none" stroke="#F5A623" stroke-width="2.5" opacity="0.45"/>
+  <!-- Content -->
+  <line x1="180" y1="414" x2="340" y2="414" stroke="#E0E0E0" stroke-width="5" stroke-linecap="round" opacity="0.4"/>
+  <line x1="180" y1="436" x2="300" y2="436" stroke="#E0E0E0" stroke-width="5" stroke-linecap="round" opacity="0.25"/>
+  <line x1="180" y1="458" x2="320" y2="458" stroke="#E0E0E0" stroke-width="5" stroke-linecap="round" opacity="0.15"/>
+  <rect x="180" y="478" width="70" height="40" rx="5" fill="#E0E0E0" opacity="0.06"/>
+  <rect x="262" y="478" width="70" height="40" rx="5" fill="#E0E0E0" opacity="0.04"/>
+  <!-- Selection label -->
+  <rect x="216" y="548" width="120" height="26" rx="6" fill="#F5A623" opacity="0.12"/>
+  <line x1="240" y1="561" x2="312" y2="561" stroke="#F5A623" stroke-width="4" stroke-linecap="round" opacity="0.5"/>
+
+  <!-- ===== WINDOW THUMBNAIL 2 ===== -->
+  <rect x="424" y="358" width="240" height="180" rx="16" ry="16" fill="none" stroke="#E0E0E0" stroke-width="3.5" opacity="0.2"/>
+  <!-- Title bar -->
+  <line x1="424" y1="390" x2="664" y2="390" stroke="#E0E0E0" stroke-width="2" opacity="0.15"/>
+  <circle cx="446" cy="374" r="5" fill="none" stroke="#E0E0E0" stroke-width="2.5" opacity="0.25"/>
+  <circle cx="464" cy="374" r="5" fill="none" stroke="#E0E0E0" stroke-width="2.5" opacity="0.25"/>
+  <circle cx="482" cy="374" r="5" fill="none" stroke="#E0E0E0" stroke-width="2.5" opacity="0.25"/>
+  <!-- Content -->
+  <line x1="448" y1="414" x2="600" y2="414" stroke="#E0E0E0" stroke-width="5" stroke-linecap="round" opacity="0.2"/>
+  <line x1="448" y1="436" x2="560" y2="436" stroke="#E0E0E0" stroke-width="5" stroke-linecap="round" opacity="0.12"/>
+  <line x1="448" y1="458" x2="580" y2="458" stroke="#E0E0E0" stroke-width="5" stroke-linecap="round" opacity="0.08"/>
+  <!-- App name label -->
+  <rect x="484" y="548" width="120" height="26" rx="6" fill="#E0E0E0" opacity="0.04"/>
+  <line x1="508" y1="561" x2="580" y2="561" stroke="#E0E0E0" stroke-width="4" stroke-linecap="round" opacity="0.12"/>
+
+  <!-- ===== WINDOW THUMBNAIL 3 (fading) ===== -->
+  <rect x="692" y="358" width="176" height="180" rx="16" ry="16" fill="none" stroke="#E0E0E0" stroke-width="3" opacity="0.1"/>
+  <!-- Title bar -->
+  <line x1="692" y1="390" x2="868" y2="390" stroke="#E0E0E0" stroke-width="2" opacity="0.08"/>
+  <circle cx="714" cy="374" r="5" fill="none" stroke="#E0E0E0" stroke-width="2.5" opacity="0.12"/>
+  <circle cx="732" cy="374" r="5" fill="none" stroke="#E0E0E0" stroke-width="2.5" opacity="0.12"/>
+  <circle cx="750" cy="374" r="5" fill="none" stroke="#E0E0E0" stroke-width="2.5" opacity="0.12"/>
+  <!-- Content -->
+  <line x1="716" y1="414" x2="840" y2="414" stroke="#E0E0E0" stroke-width="5" stroke-linecap="round" opacity="0.1"/>
+  <line x1="716" y1="436" x2="810" y2="436" stroke="#E0E0E0" stroke-width="5" stroke-linecap="round" opacity="0.06"/>
+  <!-- Fade overlay on right edge -->
+  <rect x="820" y="310" width="96" height="404" rx="0" fill="#0D0D0D" opacity="0.6"/>
+
+  <!-- ===== TAB KEY HINT (bottom) ===== -->
+  <!-- Tab key shape -->
+  <rect x="398" y="756" width="228" height="64" rx="14" ry="14" fill="none" stroke="#E0E0E0" stroke-width="4" opacity="0.2"/>
+  <!-- "TABİ" text representation as lines -->
+  <line x1="440" y1="788" x2="584" y2="788" stroke="#E0E0E0" stroke-width="6" stroke-linecap="round" opacity="0.3"/>
+
+  <!-- Navigation dots -->
+  <circle cx="468" cy="668" r="8" fill="#F5A623" opacity="0.5"/>
+  <circle cx="512" cy="668" r="8" fill="#E0E0E0" opacity="0.15"/>
+  <circle cx="556" cy="668" r="8" fill="#E0E0E0" opacity="0.1"/>
+
+  <!-- Amber glow overlay -->
+  <rect x="108" y="310" width="808" height="404" rx="32" ry="32" fill="url(#amberGlow)"/>
+</svg>
