@@ -15,6 +15,7 @@ final class TabiViewModel {
     var selectedSpaceId: UInt64? = nil    // nil = active space
     var selectedIndex: Int = 0
     var isVisible: Bool = false
+    var onOpenSettings: (() -> Void)?
 
     var windows: [WindowItem] {
         guard let spaceId = selectedSpaceId else { return allWindows }

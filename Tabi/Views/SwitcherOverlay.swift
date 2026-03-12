@@ -8,36 +8,50 @@ struct SwitcherOverlay: View {
     @Bindable var viewModel: TabiViewModel
 
     var body: some View {
-        ZStack {
-            Color.black.opacity(0.4)
-                .ignoresSafeArea()
+        GeometryReader { geo in
+            ZStack {
+                Color.black.opacity(0.4)
+                    .ignoresSafeArea()
 
-            VStack(spacing: 0) {
-                if viewModel.spaces.count > 1 {
-                    spaceBar
-                        .padding(.top, 24)
+                VStack(spacing: 0) {
+                    if viewModel.spaces.count > 1 {
+                        spaceBar
+                            .padding(.top, 24)
+                    }
+
+                    if viewModel.allWindows.isEmpty {
+                        // Still loading
+                        Spacer()
+                        ProgressView()
+                            .controlSize(.large)
+                            .tint(.white)
+                        Spacer()
+                    } else if viewModel.windows.isEmpty {
+                        // Space selected but has no windows
+                        Spacer()
+                        Text("No windows on this desktop")
+                            .font(.system(size: 16))
+                            .foregroundStyle(.white.opacity(0.5))
+                        Spacer()
+                    } else {
+                        windowGrid
+                    }
                 }
 
-                if viewModel.allWindows.isEmpty {
-                    // Still loading
-                    Spacer()
-                    ProgressView()
-                        .controlSize(.large)
-                        .tint(.white)
-                    Spacer()
-                } else if viewModel.windows.isEmpty {
-                    // Space selected but has no windows
-                    Spacer()
-                    Text("No windows on this desktop")
-                        .font(.system(size: 16))
-                        .foregroundStyle(.white.opacity(0.5))
-                    Spacer()
-                } else {
-                    windowGrid
+                // Gear button — absolute bottom-left
+                Button {
+                    viewModel.onOpenSettings?()
+                } label: {
+                    Image(systemName: "gearshape")
+                        .font(.system(size:26))
+                        .foregroundStyle(.white.opacity(0.6))
+                        .frame(width: 64, height: 64)
+                        .contentShape(Rectangle())
                 }
+                .buttonStyle(.plain)
+                .position(x: 60, y: geo.size.height - 100)
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     // MARK: - Space bar

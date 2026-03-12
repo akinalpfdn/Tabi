@@ -53,15 +53,24 @@ final class EventMonitor {
 
     // MARK: - Event handling
 
-    private var optionHeld = false
+    private var modifierHeld = false
 
     private func handle(proxy: CGEventTapProxy, type: CGEventType, event: CGEvent) -> Unmanaged<CGEvent>? {
 
+        // Pass all events through while user is recording a new hotkey
+        if TabiSettings.shared.isRecordingHotkey {
+            return Unmanaged.passUnretained(event)
+        }
+
+        let settings = TabiSettings.shared
+        let targetModifier = CGEventFlags(rawValue: settings.hotkey.modifierFlags)
+        let targetKeyCode = Int64(settings.hotkey.keyCode)
+
         if type == .flagsChanged {
             let flags = event.flags
-            let wasHeld = optionHeld
-            optionHeld = flags.contains(.maskAlternate)
-            if wasHeld && !optionHeld {
+            let wasHeld = modifierHeld
+            modifierHeld = flags.contains(targetModifier)
+            if wasHeld && !modifierHeld {
                 DispatchQueue.main.async { self.onOptionReleased?() }
             }
             return Unmanaged.passUnretained(event)
@@ -71,14 +80,12 @@ final class EventMonitor {
             let keyCode = event.getIntegerValueField(.keyboardEventKeycode)
             let flags = event.flags
 
-            // Option + Tab
-            if keyCode == kVK_Tab && flags.contains(.maskAlternate) {
+            if keyCode == targetKeyCode && flags.contains(targetModifier) {
                 let reverse = flags.contains(.maskShift)
                 DispatchQueue.main.async { self.onOptionTab?(reverse) }
                 return nil  // swallow
             }
 
-            // Escape
             if keyCode == kVK_Escape {
                 DispatchQueue.main.async { self.onEscape?() }
                 // don't swallow — let escape propagate

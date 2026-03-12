@@ -21,10 +21,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var panel: OverlayPanel?
     private var onboardingWindow: NSWindow?
     private var toastWindow: NSPanel?
+    private var settingsWindow: NSWindow?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
-        try? SMAppService.mainApp.register()
+        // Login item is managed by TabiSettings based on user preference
+        if TabiSettings.shared.launchAtStartup {
+            try? SMAppService.mainApp.register()
+        }
         checkPermissionsAndStart()
         UpdateChecker.check(
             repo: "akinalpfdn/tabi",
@@ -61,11 +65,39 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func startApp() {
         let vm = TabiViewModel()
+        vm.onOpenSettings = { [weak self] in
+            self?.viewModel?.dismiss()
+            self?.openSettings()
+        }
         viewModel = vm
         let p = OverlayPanel(viewModel: vm)
         panel = p
         observeVisibility(viewModel: vm, panel: p)
         showWelcomeToastIfNeeded()
+    }
+
+    // MARK: - Settings
+
+    func openSettings() {
+        if settingsWindow == nil {
+            let window = NSWindow(
+                contentRect: NSRect(x: 0, y: 0, width: 380, height: 160),
+                styleMask: [.titled, .closable, .fullSizeContentView],
+                backing: .buffered,
+                defer: false
+            )
+            window.title = "Tabi Settings"
+            window.titlebarAppearsTransparent = true
+            window.isReleasedWhenClosed = false
+            window.level = .floating
+            settingsWindow = window
+        }
+
+        settingsWindow?.contentView = NSHostingView(rootView: SettingsView())
+        settingsWindow?.setContentSize(settingsWindow!.contentView!.fittingSize)
+        settingsWindow?.center()
+        settingsWindow?.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
     }
 
     private func observeVisibility(viewModel: TabiViewModel, panel: OverlayPanel) {
