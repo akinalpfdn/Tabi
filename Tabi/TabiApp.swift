@@ -2,6 +2,7 @@ import SwiftUI
 import AppKit
 import ScreenCaptureKit
 import ServiceManagement
+import Sparkle
 
 // MARK: - TabiApp
 
@@ -22,6 +23,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var onboardingWindow: NSWindow?
     private var toastWindow: NSPanel?
     private var settingsWindow: NSWindow?
+    let updaterController = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil)
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
@@ -30,10 +32,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             try? SMAppService.mainApp.register()
         }
         checkPermissionsAndStart()
-        UpdateChecker.check(
-            repo: "akinalpfdn/tabi",
-            releasePageURL: URL(string: "https://github.com/akinalpfdn/tabi/releases/latest")!
-        )
     }
 
     // MARK: - Permission Flow
@@ -93,7 +91,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             settingsWindow = window
         }
 
-        settingsWindow?.contentView = NSHostingView(rootView: SettingsView())
+        settingsWindow?.contentView = NSHostingView(rootView: SettingsView(updater: updaterController.updater))
         settingsWindow?.setContentSize(settingsWindow!.contentView!.fittingSize)
         settingsWindow?.center()
         settingsWindow?.makeKeyAndOrderFront(nil)

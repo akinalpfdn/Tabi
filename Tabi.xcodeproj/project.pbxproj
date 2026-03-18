@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		A1000001SPARKLE000000001 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = A1000002SPARKLE000000001 /* Sparkle */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		F4351B992F61F0C300D167CA /* Tabi.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Tabi.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -36,6 +40,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A1000001SPARKLE000000001 /* Sparkle in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -78,6 +83,7 @@
 			);
 			name = Tabi;
 			packageProductDependencies = (
+				A1000002SPARKLE000000001 /* Sparkle */,
 			);
 			productName = Tabi;
 			productReference = F4351B992F61F0C300D167CA /* Tabi.app */;
@@ -107,6 +113,9 @@
 			);
 			mainGroup = F4351B902F61F0C300D167CA;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				A1000003SPARKLE000000001 /* XCRemoteSwiftPackageReference "Sparkle" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F4351B9A2F61F0C300D167CA /* Products */;
 			projectDirPath = "";
@@ -346,6 +355,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		A1000003SPARKLE000000001 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		A1000002SPARKLE000000001 /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A1000003SPARKLE000000001 /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = F4351B912F61F0C300D167CA /* Project object */;
 }

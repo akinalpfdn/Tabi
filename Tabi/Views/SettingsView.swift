@@ -1,6 +1,7 @@
 import SwiftUI
 import AppKit
 import Carbon.HIToolbox
+import Sparkle
 
 // MARK: - SettingsView
 
@@ -9,6 +10,11 @@ struct SettingsView: View {
     @State private var settings = TabiSettings.shared
     @State private var isRecording = false
     @State private var localMonitor: Any?
+    private let updater: SPUUpdater
+
+    init(updater: SPUUpdater) {
+        self.updater = updater
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -49,6 +55,26 @@ struct SettingsView: View {
                 Toggle("", isOn: $settings.launchAtStartup)
                     .toggleStyle(.switch)
                     .labelsHidden()
+            }
+
+            Divider()
+                .padding(.vertical, 16)
+
+            // Check for updates row
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Updates")
+                        .font(.body)
+                    Text("Check for new versions of Tabi")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+
+                Button("Check for Updates") {
+                    updater.checkForUpdates()
+                }
             }
         }
         .padding(24)

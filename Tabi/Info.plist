@@ -2,6 +2,12 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>SUFeedURL</key>
+	<string>https://raw.githubusercontent.com/akinalpfdn/tabi/main/appcast.xml</string>
+	<key>SUPublicEDKey</key>
+	<string>wWLr5ZzL6da+Dcqy9sMkwt1Zo28R6GfY1K2r2Kfxlx8=</string>
+	<key>SUEnableAutomaticChecks</key>
+	<true/>
 	<key>NSAccessibilityUsageDescription</key>
 	<string>Tabi needs Accessibility access to detect keyboard shortcuts and switch between windows.</string>
 	<key>NSScreenCaptureUsageDescription</key>
