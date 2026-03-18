@@ -27,6 +27,7 @@ final class TabiViewModel {
 
     private let eventMonitor = EventMonitor()
     private var isLoading = false
+    private var releasedDuringLoad = false
 
     // MARK: - Init
 
@@ -37,7 +38,12 @@ final class TabiViewModel {
             }
         }
         eventMonitor.onOptionReleased = { [weak self] in
-            self?.activateSelected()
+            guard let self else { return }
+            if self.isLoading {
+                self.releasedDuringLoad = true
+            } else {
+                self.activateSelected()
+            }
         }
         eventMonitor.onEscape = { [weak self] in
             self?.dismiss()
@@ -62,6 +68,7 @@ final class TabiViewModel {
     private func showSwitcher() async {
         guard !isLoading else { return }
         isLoading = true
+        releasedDuringLoad = false
 
         // Load spaces, default to active space
         spaces = SpaceManager.allSpaces()
@@ -76,8 +83,19 @@ final class TabiViewModel {
 
         allWindows = items
         selectedIndex = windows.count > 1 ? 1 : 0
-        isVisible = true
         isLoading = false
+
+        // Quick switch: Option was released before loading finished
+        if releasedDuringLoad {
+            releasedDuringLoad = false
+            let list = windows
+            if list.indices.contains(selectedIndex) {
+                activateWindow(list[selectedIndex])
+            }
+            return
+        }
+
+        isVisible = true
     }
 
     func selectSpace(_ space: SpaceInfo?) {

@@ -19,7 +19,10 @@ enum WindowEnumerator {
         let excludedNames: Set<String> = ["Tabi", "Dock", "Window Server", "Control Center",
                                           "NotificationCenter", "Spotlight", "universalAccessAuthWarn"]
 
-        return content.windows.compactMap { scWindow -> WindowItem? in
+        // Get z-order (front-to-back = MRU) from CGWindowList
+        let zOrder = Self.windowZOrder()
+
+        var items = content.windows.compactMap { scWindow -> WindowItem? in
             guard let app = scWindow.owningApplication else { return nil }
             guard userAppPIDs.contains(app.processID) else { return nil }
             guard !excludedNames.contains(app.applicationName) else { return nil }
@@ -36,6 +39,29 @@ enum WindowEnumerator {
                 bounds: scWindow.frame
             )
         }
+
+        // Sort by z-order: frontmost (most recent) first
+        items.sort { a, b in
+            let ai = zOrder[a.id] ?? Int.max
+            let bi = zOrder[b.id] ?? Int.max
+            return ai < bi
+        }
+
+        return items
+    }
+
+    /// Returns a mapping of windowID → z-order index (0 = frontmost).
+    private static func windowZOrder() -> [CGWindowID: Int] {
+        guard let infoList = CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID) as? [[String: Any]] else {
+            return [:]
+        }
+        var order: [CGWindowID: Int] = [:]
+        for (index, info) in infoList.enumerated() {
+            if let id = info[kCGWindowNumber as String] as? CGWindowID {
+                order[id] = index
+            }
+        }
+        return order
     }
 
     private static func appPath(for pid: pid_t) -> String? {
