@@ -36,7 +36,8 @@ enum WindowEnumerator {
                 title: title,
                 appName: app.applicationName,
                 appIcon: appIcon,
-                bounds: scWindow.frame
+                bounds: scWindow.frame,
+                pid: app.processID
             )
         }
 
@@ -50,9 +51,9 @@ enum WindowEnumerator {
         return items
     }
 
-    /// Returns a mapping of windowID → z-order index (0 = frontmost).
+    /// windowID → z-order index (0 = frontmost).
     private static func windowZOrder() -> [CGWindowID: Int] {
-        guard let infoList = CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID) as? [[String: Any]] else {
+        guard let infoList = CGWindowListCopyWindowInfo([.optionAll, .excludeDesktopElements], kCGNullWindowID) as? [[String: Any]] else {
             return [:]
         }
         var order: [CGWindowID: Int] = [:]
@@ -64,7 +65,74 @@ enum WindowEnumerator {
         return order
     }
 
+    static func cacheAXElements(for items: inout [WindowItem]) {
+        let byPid = Dictionary(grouping: items.indices, by: { items[$0].pid })
+
+        for (pid, indices) in byPid {
+            let appElement = AXUIElementCreateApplication(pid)
+            var windowsRef: CFTypeRef?
+            if AXUIElementCopyAttributeValue(appElement, kAXWindowsAttribute as CFString, &windowsRef) == .success,
+               let axWindows = windowsRef as? [AXUIElement] {
+                for axWindow in axWindows {
+                    var idVal: CGWindowID = 0
+                    _AXUIElementGetWindow(axWindow, &idVal)
+                    if let idx = indices.first(where: { items[$0].id == idVal }) {
+                        items[idx].axWindow = axWindow
+                    }
+                }
+            }
+
+            let missingIndices = indices.filter { items[$0].axWindow == nil }
+            guard !missingIndices.isEmpty else { continue }
+
+            let missingIds = Set(missingIndices.map { items[$0].id })
+            let bruteForceElements = axElementsByBruteForce(pid: pid)
+
+            for axWindow in bruteForceElements {
+                var idVal: CGWindowID = 0
+                _AXUIElementGetWindow(axWindow, &idVal)
+                if missingIds.contains(idVal),
+                   let idx = missingIndices.first(where: { items[$0].id == idVal }) {
+                    items[idx].axWindow = axWindow
+                }
+            }
+        }
+    }
+
+    private static func axElementsByBruteForce(pid: pid_t) -> [AXUIElement] {
+        var remoteToken = Data(count: 20)
+        remoteToken.replaceSubrange(0..<4, with: withUnsafeBytes(of: pid) { Data($0) })
+        remoteToken.replaceSubrange(4..<8, with: withUnsafeBytes(of: Int32(0)) { Data($0) })
+        remoteToken.replaceSubrange(8..<12, with: withUnsafeBytes(of: Int32(0x636f636f)) { Data($0) })
+
+        var results = [AXUIElement]()
+        let start = DispatchTime.now()
+
+        for elementId: UInt64 in 0..<1000 {
+            remoteToken.replaceSubrange(12..<20, with: withUnsafeBytes(of: elementId) { Data($0) })
+            guard let ax = _AXUIElementCreateWithRemoteToken(remoteToken as CFData)?.takeRetainedValue() else { continue }
+
+            var subroleRef: CFTypeRef?
+            guard AXUIElementCopyAttributeValue(ax, kAXSubroleAttribute as CFString, &subroleRef) == .success,
+                  let subrole = subroleRef as? String,
+                  subrole == kAXStandardWindowSubrole as String || subrole == kAXDialogSubrole as String
+            else { continue }
+
+            results.append(ax)
+
+            let elapsed = DispatchTime.now().uptimeNanoseconds - start.uptimeNanoseconds
+            if elapsed > 100_000_000 { break }
+        }
+        return results
+    }
+
     private static func appPath(for pid: pid_t) -> String? {
         NSRunningApplication(processIdentifier: pid)?.bundleURL?.path
     }
 }
+
+@_silgen_name("_AXUIElementGetWindow") @discardableResult
+func _AXUIElementGetWindow(_ element: AXUIElement, _ windowID: inout CGWindowID) -> AXError
+
+@_silgen_name("_AXUIElementCreateWithRemoteToken") @discardableResult
+private func _AXUIElementCreateWithRemoteToken(_ data: CFData) -> Unmanaged<AXUIElement>?

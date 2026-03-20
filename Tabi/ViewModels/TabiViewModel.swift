@@ -12,7 +12,7 @@ final class TabiViewModel {
 
     var allWindows: [WindowItem] = []
     var spaces: [SpaceInfo] = []
-    var selectedSpaceId: UInt64? = nil    // nil = active space
+    var selectedSpaceId: UInt64? = nil    // nil = all windows
     var selectedIndex: Int = 0
     var isVisible: Bool = false
     var onOpenSettings: (() -> Void)?
@@ -28,6 +28,7 @@ final class TabiViewModel {
     private let eventMonitor = EventMonitor()
     private var isLoading = false
     private var releasedDuringLoad = false
+    private var lastActivatedWindowId: CGWindowID?
 
     // MARK: - Init
 
@@ -47,6 +48,17 @@ final class TabiViewModel {
         }
         eventMonitor.onEscape = { [weak self] in
             self?.dismiss()
+        }
+        eventMonitor.onSpaceShortcut = { [weak self] index in
+            guard let self, self.isVisible else { return }
+            if index == -1 {
+                self.selectSpace(nil)
+            } else {
+                let desktops = self.spaces.filter { !$0.isFullscreen }
+                if desktops.indices.contains(index) {
+                    self.selectSpace(desktops[index])
+                }
+            }
         }
         eventMonitor.start()
     }
@@ -70,15 +82,27 @@ final class TabiViewModel {
         isLoading = true
         releasedDuringLoad = false
 
-        // Load spaces, default to active space
+        // Load spaces, default to showing all windows
         spaces = SpaceManager.allSpaces()
-        selectedSpaceId = spaces.first(where: { $0.isActive })?.id
+        selectedSpaceId = nil
 
         // Load all windows across all spaces
         var items = await WindowEnumerator.allWindows()
         let thumbnails = await WindowCapturer.captureAll(windows: items)
         for i in items.indices {
             items[i].thumbnail = thumbnails[items[i].id]
+        }
+
+        // Cache AX element references (needed for cross-space window activation)
+        WindowEnumerator.cacheAXElements(for: &items)
+
+        // If we recently switched to a window, make sure it's at index 0
+        // so the next quick-switch correctly toggles back
+        if let lastId = lastActivatedWindowId,
+           let lastIdx = items.firstIndex(where: { $0.id == lastId }),
+           lastIdx != 0 {
+            let item = items.remove(at: lastIdx)
+            items.insert(item, at: 0)
         }
 
         allWindows = items
@@ -120,8 +144,8 @@ final class TabiViewModel {
             return
         }
         let window = list[selectedIndex]
-        dismiss()
         activateWindow(window)
+        dismiss()
     }
 
     func select(_ item: WindowItem) {
@@ -164,35 +188,40 @@ final class TabiViewModel {
     // MARK: - Window activation
 
     private func activateWindow(_ window: WindowItem) {
-        // If window is on a different space, switch to it first
-        if let spaceId = selectedSpaceId,
-           let space = spaces.first(where: { $0.id == spaceId }),
-           !space.isActive {
-            SpaceManager.switchTo(spaceIndex: space.index)
+        lastActivatedWindowId = window.id
+
+        var psn = ProcessSerialNumber()
+        GetProcessForPID(window.pid, &psn)
+        _SLPSSetFrontProcessWithOptions(&psn, window.id, 0x200)
+        makeKeyWindow(&psn, windowId: window.id)
+
+        if let ax = window.axWindow {
+            AXUIElementSetAttributeValue(ax, kAXMainAttribute as CFString, kCFBooleanTrue)
+            AXUIElementPerformAction(ax, kAXRaiseAction as CFString)
         }
+    }
 
-        guard let app = NSWorkspace.shared.runningApplications
-            .first(where: { $0.localizedName == window.appName }) else { return }
-
-        app.activate()
-
-        let appElement = AXUIElementCreateApplication(app.processIdentifier)
-        var windowsRef: CFTypeRef?
-        guard AXUIElementCopyAttributeValue(appElement, kAXWindowsAttribute as CFString, &windowsRef) == .success,
-              let axWindows = windowsRef as? [AXUIElement] else { return }
-
-        for axWindow in axWindows {
-            var idVal: CGWindowID = 0
-            _ = _AXUIElementGetWindow(axWindow, &idVal)
-            if idVal == window.id {
-                AXUIElementSetAttributeValue(axWindow, kAXMainAttribute as CFString, kCFBooleanTrue)
-                AXUIElementPerformAction(axWindow, kAXRaiseAction as CFString)
-                break
-            }
-        }
+    private func makeKeyWindow(_ psn: inout ProcessSerialNumber, windowId: CGWindowID) {
+        var bytes = [UInt8](repeating: 0, count: 0xf8)
+        bytes[0x04] = 0xf8
+        bytes[0x3a] = 0x10
+        var wid = windowId
+        memcpy(&bytes[0x3c], &wid, MemoryLayout<UInt32>.size)
+        memset(&bytes[0x20], 0xff, 0x10)
+        bytes[0x08] = 0x01
+        SLPSPostEventRecordTo(&psn, &bytes)
+        bytes[0x08] = 0x02
+        SLPSPostEventRecordTo(&psn, &bytes)
     }
 }
 
-// Private CoreGraphics SPI for getting CGWindowID from AXUIElement
-@_silgen_name("_AXUIElementGetWindow")
-private func _AXUIElementGetWindow(_ element: AXUIElement, _ windowID: inout CGWindowID) -> AXError
+// MARK: - Private SPI
+
+@_silgen_name("GetProcessForPID") @discardableResult
+private func GetProcessForPID(_ pid: pid_t, _ psn: UnsafeMutablePointer<ProcessSerialNumber>) -> OSStatus
+
+@_silgen_name("_SLPSSetFrontProcessWithOptions") @discardableResult
+private func _SLPSSetFrontProcessWithOptions(_ psn: UnsafeMutablePointer<ProcessSerialNumber>, _ wid: CGWindowID, _ mode: UInt32) -> CGError
+
+@_silgen_name("SLPSPostEventRecordTo") @discardableResult
+private func SLPSPostEventRecordTo(_ psn: UnsafeMutablePointer<ProcessSerialNumber>, _ bytes: UnsafeMutablePointer<UInt8>) -> CGError

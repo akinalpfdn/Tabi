@@ -14,10 +14,8 @@ struct SwitcherOverlay: View {
                     .ignoresSafeArea()
 
                 VStack(spacing: 0) {
-                    if viewModel.spaces.count > 1 {
-                        spaceBar
-                            .padding(.top, 24)
-                    }
+                    spaceBar
+                        .padding(.top, 24)
 
                     if viewModel.allWindows.isEmpty {
                         // Still loading
@@ -58,9 +56,20 @@ struct SwitcherOverlay: View {
 
     private var spaceBar: some View {
         HStack(spacing: 8) {
-            ForEach(viewModel.spaces) { space in
+            SpaceTab(
+                label: "All",
+                shortcut: "`",
+                isActive: false,
+                isSelected: viewModel.selectedSpaceId == nil
+            ) {
+                viewModel.selectSpace(nil)
+            }
+
+            let desktops = viewModel.spaces.filter { !$0.isFullscreen }
+            ForEach(Array(desktops.enumerated()), id: \.element.id) { i, space in
                 SpaceTab(
-                    label: "Desktop \(space.index)",
+                    label: "Desktop \(i + 1)",
+                    shortcut: "\(i + 1)",
                     isActive: space.isActive,
                     isSelected: viewModel.selectedSpaceId == space.id
                 ) {
@@ -113,6 +122,7 @@ struct SwitcherOverlay: View {
 private struct SpaceTab: View {
 
     let label: String
+    let shortcut: String
     let isActive: Bool
     let isSelected: Bool
     let onTap: () -> Void
@@ -128,6 +138,9 @@ private struct SpaceTab: View {
                 Text(label)
                     .font(.system(size: 12, weight: isSelected ? .semibold : .regular))
                     .foregroundStyle(isSelected ? .white : .white.opacity(0.6))
+                Text(shortcut)
+                    .font(.system(size: 10, design: .monospaced))
+                    .foregroundStyle(.white.opacity(0.3))
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 7)

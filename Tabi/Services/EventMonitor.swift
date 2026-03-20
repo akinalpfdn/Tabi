@@ -9,6 +9,7 @@ final class EventMonitor {
     var onOptionTab: ((_ reverse: Bool) -> Void)?
     var onOptionReleased: (() -> Void)?
     var onEscape: (() -> Void)?
+    var onSpaceShortcut: ((_ index: Int) -> Void)?   // -1 = All, 0 = Desktop 1, 1 = Desktop 2...
 
     private var eventTap: CFMachPort?
     private var runLoopSource: CFRunLoopSource?
@@ -84,6 +85,25 @@ final class EventMonitor {
                 let reverse = flags.contains(.maskShift)
                 DispatchQueue.main.async { self.onOptionTab?(reverse) }
                 return nil  // swallow
+            }
+
+            // Space switching: ` for All, 1-9 for desktops (while modifier held)
+            if modifierHeld {
+                if keyCode == kVK_ANSI_Grave || keyCode == kVK_ISO_Section {
+                    DispatchQueue.main.async { self.onSpaceShortcut?(-1) }
+                    return nil
+                }
+                // kVK_ANSI_1 (0x12) through kVK_ANSI_9 (0x19) are not sequential,
+                // so map them explicitly
+                let digitKeyCodes: [Int64: Int] = [
+                    Int64(kVK_ANSI_1): 0, Int64(kVK_ANSI_2): 1, Int64(kVK_ANSI_3): 2,
+                    Int64(kVK_ANSI_4): 3, Int64(kVK_ANSI_5): 4, Int64(kVK_ANSI_6): 5,
+                    Int64(kVK_ANSI_7): 6, Int64(kVK_ANSI_8): 7, Int64(kVK_ANSI_9): 8,
+                ]
+                if let desktopIndex = digitKeyCodes[keyCode] {
+                    DispatchQueue.main.async { self.onSpaceShortcut?(desktopIndex) }
+                    return nil
+                }
             }
 
             if keyCode == kVK_Escape {

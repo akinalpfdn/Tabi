@@ -8,7 +8,9 @@ struct WindowItem: Identifiable, Equatable {
     let appName: String
     let appIcon: NSImage?
     let bounds: CGRect
+    let pid: pid_t
     var thumbnail: NSImage?
+    var axWindow: AXUIElement?
 
     static func == (lhs: WindowItem, rhs: WindowItem) -> Bool {
         lhs.id == rhs.id

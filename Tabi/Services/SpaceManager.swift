@@ -24,19 +24,12 @@ private func CGSCopyWindowsWithOptionsAndTags(
     _ clearTags: UnsafeMutablePointer<UInt64>
 ) -> CFArray?
 
-// CGSSetWorkspace isn't exported in newer SDKs, load it at runtime via dlsym
-private typealias CGSSetWorkspaceFunc = @convention(c) (CGSConnectionID, Int32) -> CGError
-private let _CGSSetWorkspace: CGSSetWorkspaceFunc? = {
-    guard let sym = dlsym(dlopen(nil, RTLD_LAZY), "CGSSetWorkspace") else { return nil }
-    return unsafeBitCast(sym, to: CGSSetWorkspaceFunc.self)
-}()
-
 // MARK: - SpaceInfo
 
 struct SpaceInfo: Identifiable, Equatable {
     let id: UInt64
-    let index: Int      // 1-based, used for switching
     let isActive: Bool
+    let isFullscreen: Bool
 }
 
 // MARK: - SpaceManager
@@ -50,23 +43,17 @@ enum SpaceManager {
 
         let activeId = CGSGetActiveSpace(cid)
         var result: [SpaceInfo] = []
-        var index = 1
 
         for display in displaySpaces {
             guard let list = display["Spaces"] as? [[String: Any]] else { continue }
             for dict in list {
                 guard let spaceId = dict["id64"] as? UInt64 else { continue }
                 let type = dict["type"] as? Int ?? 0
-                guard type == 0 else { continue }   // skip fullscreen/tiled spaces
-                result.append(SpaceInfo(id: spaceId, index: index, isActive: spaceId == activeId))
-                index += 1
+                let isFullscreen = type != 0
+                result.append(SpaceInfo(id: spaceId, isActive: spaceId == activeId, isFullscreen: isFullscreen))
             }
         }
         return result
-    }
-
-    static func activeSpaceID() -> UInt64 {
-        CGSGetActiveSpace(CGSMainConnectionID())
     }
 
     static func windowIDs(inSpace spaceId: UInt64) -> Set<CGWindowID> {
@@ -77,10 +64,5 @@ enum SpaceManager {
         guard let raw = CGSCopyWindowsWithOptionsAndTags(cid, 0, spaceArray, 2, &setTags, &clearTags),
               let list = raw as? [CGWindowID] else { return [] }
         return Set(list)
-    }
-
-    /// Switch to a space by its 1-based index. Call before activating a window on that space.
-    static func switchTo(spaceIndex: Int) {
-        _CGSSetWorkspace?(CGSMainConnectionID(), Int32(spaceIndex))
     }
 }
