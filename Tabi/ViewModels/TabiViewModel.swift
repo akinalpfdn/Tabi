@@ -28,7 +28,7 @@ final class TabiViewModel {
     private let eventMonitor = EventMonitor()
     private var isLoading = false
     private var releasedDuringLoad = false
-    private var lastActivatedWindowId: CGWindowID?
+    private var mruOrder: [CGWindowID] = []
 
     // MARK: - Init
 
@@ -93,16 +93,20 @@ final class TabiViewModel {
             items[i].thumbnail = thumbnails[items[i].id]
         }
 
-        // Cache AX element references (needed for cross-space window activation)
         WindowEnumerator.cacheAXElements(for: &items)
 
-        // If we recently switched to a window, make sure it's at index 0
-        // so the next quick-switch correctly toggles back
-        if let lastId = lastActivatedWindowId,
-           let lastIdx = items.firstIndex(where: { $0.id == lastId }),
-           lastIdx != 0 {
-            let item = items.remove(at: lastIdx)
-            items.insert(item, at: 0)
+        // Add current frontmost window to MRU if not already tracked
+        if let frontmost = items.first, !mruOrder.contains(frontmost.id) {
+            mruOrder.insert(frontmost.id, at: 0)
+        }
+
+        // Reorder based on MRU history
+        for (insertAt, mruId) in mruOrder.enumerated() {
+            guard insertAt < items.count,
+                  let currentIdx = items.firstIndex(where: { $0.id == mruId }),
+                  currentIdx != insertAt else { continue }
+            let item = items.remove(at: currentIdx)
+            items.insert(item, at: insertAt)
         }
 
         allWindows = items
@@ -188,7 +192,8 @@ final class TabiViewModel {
     // MARK: - Window activation
 
     private func activateWindow(_ window: WindowItem) {
-        lastActivatedWindowId = window.id
+        mruOrder.removeAll { $0 == window.id }
+        mruOrder.insert(window.id, at: 0)
 
         var psn = ProcessSerialNumber()
         GetProcessForPID(window.pid, &psn)
