@@ -26,9 +26,9 @@ final class TabiViewModel {
     // MARK: - Private
 
     private let eventMonitor = EventMonitor()
+    private let windowTracker = WindowTracker()
     private var isLoading = false
     private var releasedDuringLoad = false
-    private var mruOrder: [CGWindowID] = []
 
     // MARK: - Init
 
@@ -95,13 +95,10 @@ final class TabiViewModel {
 
         WindowEnumerator.cacheAXElements(for: &items)
 
-        // Add current frontmost window to MRU if not already tracked
-        if let frontmost = items.first, !mruOrder.contains(frontmost.id) {
-            mruOrder.insert(frontmost.id, at: 0)
-        }
-
-        // Reorder based on MRU history
-        for (insertAt, mruId) in mruOrder.enumerated() {
+        let mru = windowTracker.mruOrder
+        print("Tabi: [switcher] mru=\(mru.prefix(5))")
+        print("Tabi: [switcher] z-order=\(items.prefix(5).map { "\($0.appName):\($0.id)" })")
+        for (insertAt, mruId) in mru.enumerated() {
             guard insertAt < items.count,
                   let currentIdx = items.firstIndex(where: { $0.id == mruId }),
                   currentIdx != insertAt else { continue }
@@ -110,6 +107,7 @@ final class TabiViewModel {
         }
 
         allWindows = items
+        print("Tabi: [switcher] final=\(items.prefix(5).map { "\($0.appName):\($0.id)" })")
         selectedIndex = windows.count > 1 ? 1 : 0
         isLoading = false
 
@@ -192,8 +190,7 @@ final class TabiViewModel {
     // MARK: - Window activation
 
     private func activateWindow(_ window: WindowItem) {
-        mruOrder.removeAll { $0 == window.id }
-        mruOrder.insert(window.id, at: 0)
+        windowTracker.pushToFront(window.id)
 
         var psn = ProcessSerialNumber()
         GetProcessForPID(window.pid, &psn)
