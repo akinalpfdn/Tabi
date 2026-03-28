@@ -7,6 +7,7 @@ final class WindowTracker {
 
     private(set) var mruOrder: [CGWindowID] = []
     private var workspaceObservers: [NSObjectProtocol] = []
+    var suppressNotifications = false
 
     init() {
         startObservingApps()
@@ -26,6 +27,14 @@ final class WindowTracker {
     // MARK: - App lifecycle
 
     private func startObservingApps() {
+        let deactivated = NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.didDeactivateApplicationNotification, object: nil, queue: .main
+        ) { [weak self] note in
+            guard let self,
+                  let app = note.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication else { return }
+            self.trackFocusedWindow(of: app)
+        }
+
         let activated = NSWorkspace.shared.notificationCenter.addObserver(
             forName: NSWorkspace.didActivateApplicationNotification, object: nil, queue: .main
         ) { [weak self] note in
@@ -34,10 +43,11 @@ final class WindowTracker {
             self.trackFocusedWindow(of: app)
         }
 
-        workspaceObservers = [activated]
+        workspaceObservers = [deactivated, activated]
     }
 
     private func trackFocusedWindow(of app: NSRunningApplication) {
+        guard !suppressNotifications else { return }
         let pid = app.processIdentifier
         let appElement = AXUIElementCreateApplication(pid)
         var focusedRef: CFTypeRef?

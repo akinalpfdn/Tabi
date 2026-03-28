@@ -190,6 +190,7 @@ final class TabiViewModel {
     // MARK: - Window activation
 
     private func activateWindow(_ window: WindowItem) {
+        windowTracker.suppressNotifications = true
         windowTracker.pushToFront(window.id)
 
         var psn = ProcessSerialNumber()
@@ -200,6 +201,10 @@ final class TabiViewModel {
         if let ax = window.axWindow {
             AXUIElementSetAttributeValue(ax, kAXMainAttribute as CFString, kCFBooleanTrue)
             AXUIElementPerformAction(ax, kAXRaiseAction as CFString)
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+            self?.windowTracker.suppressNotifications = false
         }
     }
 
